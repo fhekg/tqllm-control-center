@@ -1,0 +1,28 @@
+# Build artifacts
+.build/
+build/
+*.app/
+*.o
+*.dylib
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Swift / Xcode
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+.swiftpm/
+module-cache/
+
+# Local config / secrets (never commit)
+config.json
+presets.json
+api-key.txt
+gui-state.json
+*.key

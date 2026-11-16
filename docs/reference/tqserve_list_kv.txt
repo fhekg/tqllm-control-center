@@ -1,0 +1,8 @@
+EXIT 0
+
+KV stores (--kv-store):
+  flat     one page of the whole context per sequence (default; every kernel)
+  paged    256-position pages taken on demand
+  tiered   paged; oldest unpinned page to host memory when the device pool is full
+
+=== STDERR ===

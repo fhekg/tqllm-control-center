@@ -1,0 +1,56 @@
+EXIT 0
+TQLLM_MLX_CACHE_LIMIT_MIB    env          -                            MiB: MLX buffer-cache limit for the Mac tools (default 512)
+TQLLM_MLX_PREFILL_CHUNK      env          -                            N: prefill chunk rows for tqmlx-dflash (>= 128; 2048 is the measured best)
+TQLLM_DEBUG                  debug        off                          comma list of diagnostics: memlog (device memory per load stage), profile (spec round phases), steps (decode step timings), stageprof (eager verify, per-stage time), matvec (kernel picks), tune (load-time tuner picks), prefill (progress), draft (first draft / accept decisions), tree_chain (tree verify as a chain), tf_dump:FILE (teacher-forced argmax per prompt position), fakeq_k:N / fakeq_v:N (quantise-dequantise K / V to N bits), qsa_mass:N (27B QSA: for N sparse verify blocks, eagerly, the share of row 0's dense attention on its selected keys per layer); Flash-Next / MoE diagnostics: arena, fn_prefill_log, cpu_check, qsa_check, pf_mmq_check:N, profile_req:N, profile_decode, route_dump:FILE, pred_dump:FILE, dump_gdn:FILE, expert_profile:FILE, keep_map:FILE, moe_profile:FILE, minimax_dump:FILE, minimax_routes:FILE, stagemap (MiniMax verify-step stage map), accept (MiniMax acceptance per draft depth), dump_feats:DIR / replay_feats:DIR (DSpark drafter training rows), glm_dump, glm_no_graph, graphs (each CUDA graph cache miss with the cache size, evictions and free device memory), composite_serial (composite matrix parts one after another on the main stream instead of concurrently: A/B, same results), mtp_eager (one-token MTP draft passes eagerly instead of as captured graphs: A/B, same results), commit_overlap (opt-in: --mtp commit replay on a side stream overlapping the draft passes; same results, single slot only so far), iq4_i8_twopass (int8 prefill: IQ4_XS weights through FP16 and the quantise pass instead of straight to int8: A/B, same results), i8_nosmooth (int8 prefill without the SmoothQuant column scales on plain-basis weights: A/B), i8_alpha:X (int8 prefill SmoothQuant strength, default 0.75), i8_own_w8 (int8 weight scratch allocated on its own instead of inside the FP16 prefill scratch: A/B); Metal: no_matrix_unit (the M1-M4 paths on an M5: MLX affine weights, no tensor-op attention), no_turn_reuse (Metal: every request prefills its whole prompt; the cold arm of a turn-reuse A/B), ane_serial, ane_timing, count_nodes, dflash_rankstats, stream_group:N (a draft-ahead verify submits every N layers, default 4), nostream (one submission per forward), tree_rows:N (token-tree verify rows, 16 or 32), no_far (drafter ring window only), retr_split, retr_share, lattice_split, build_split, dump_ffn:DIR, dump_ffn_slice:N, wired_mib:N; Metal bench tools: dflash_spec_only, dflash_warm_tokens:N, draft_stages, draft_bench:N, kl_rows:K, kl_slice:N
+TQLLM_MATVEC_RULE            env          -                            override the matvec kernel rule table (src/formats/weight/matvec_rules.hpp) per format bits: "BITS:KERNEL[:PF],... (KERNEL legacy or split16)", e.g. "3:split16:2,21:legacy" (3 TQ3, 4 TQ4, 14 IQ4N, 21 IQ3)
+TQLLM_GLM_EXPERT_SLOTS       env          0                            GLM-5.3-Flash: keep only this many routed experts of every MoE layer resident, in a MixedExpertCache bank (0: the whole expert stack on the device). The experts a token needs are streamed from the GGUF / the packed file, so the tokens do not change; it also turns off the decode CUDA graph
+TQLLM_GLM_EXPERT_BUDGET_MB   env          banks + 25 %                 GLM-5.3-Flash: device bytes the expert banks plus loader staging may hold. With TQLLM_GLM_EXPERT_SLOTS it caps them; on its own it turns on the shared byte-budget plan (src/experts/expert_bank_plan.hpp), which gives every MoE layer top-k slots and the rest of the bytes to the layers whose routing spreads over more experts (measured over the prompt, re-planned when it ends)
+TQLLM_GLM_EXPERTS            env          -                            GLM-5.3-Flash: packed expert file (glm-pack-experts MODEL.gguf OUT.tqfnexp) for the expert banks: a bank miss copies the expert instead of repacking it; the engine page-locks it when it is at most half the host RAM, which also lets it prefetch (TQLLM_GLM_EXPERT_PF); a bigger file copies misses through pinned staging
+TQLLM_DEBUG_DRAFT            retired      -                            removed  -> use TQLLM_DEBUG=draft
+TQLLM_DFLASH                 retired      -                            removed  -> use -md / --model-draft FILE
+TQLLM_DRAFT_D                retired      -                            removed  -> use tqserve --draft-max N
+TQLLM_DRAFT_VOCAB            retired      -                            removed  -> use --draft-vocab FILE
+TQLLM_FAKEQ_K                retired      -                            removed  -> use TQLLM_DEBUG=fakeq_k:N
+TQLLM_FAKEQ_V                retired      -                            removed  -> use TQLLM_DEBUG=fakeq_v:N
+TQLLM_IQ3_OLD                retired      -                            removed  -> use TQLLM_MATVEC_RULE=21:legacy
+TQLLM_IQ3_PF                 retired      -                            removed  -> use TQLLM_MATVEC_RULE=21:split16:PF
+TQLLM_IQ4N_PF                retired      -                            removed  -> use TQLLM_MATVEC_RULE=14:split16:PF
+TQLLM_KV                     retired      -                            removed  -> use --kv FORMAT or -ctk / -ctv
+TQLLM_KV8                    retired      -                            removed  -> use -ctk q8 (or --kv q8)
+TQLLM_KV_K                   retired      -                            removed  -> use -ctk / --cache-type-k
+TQLLM_KV_T4K3V               retired      -                            removed  -> use --kv t4k-turbo3v
+TQLLM_KV_T4KV                retired      -                            removed  -> use --kv t4kv
+TQLLM_KV_TQ3                 retired      -                            removed  -> use --kv tq3
+TQLLM_KV_TURBO3_V            retired      -                            removed  -> use --kv q8k-turbo3v
+TQLLM_KV_V                   retired      -                            removed  -> use -ctv / --cache-type-v
+TQLLM_LOOKUP                 retired      -                            removed  -> use --lookup L
+TQLLM_LOOKUP_FIRST           retired      -                            removed  -> use --lookup-first K
+TQLLM_MATVEC_LOG             retired      -                            removed  -> use TQLLM_DEBUG=matvec
+TQLLM_MEMLOG                 retired      -                            removed  -> use TQLLM_DEBUG=memlog
+TQLLM_PREFILL_BUF            retired      -                            removed  -> use -ub / --ubatch-size N
+TQLLM_PREFILL_PROGRESS       retired      -                            removed  -> use TQLLM_DEBUG=prefill
+TQLLM_PROFILE                retired      -                            removed  -> use TQLLM_DEBUG=profile
+TQLLM_REPEAT_LIMIT           retired      -                            removed  -> use tqserve --repeat-limit N
+TQLLM_STAGEPROF              retired      -                            removed  -> use TQLLM_DEBUG=stageprof
+TQLLM_STEP_PROF              retired      -                            removed  -> use TQLLM_DEBUG=steps
+TQLLM_TF_DUMP                retired      -                            removed  -> use TQLLM_DEBUG=tf_dump:FILE
+TQLLM_TQ3_OLD                retired      -                            removed  -> use TQLLM_MATVEC_RULE=3:legacy
+TQLLM_TQ3_TUNE_LOG           retired      -                            removed  -> use TQLLM_DEBUG=tune
+TQLLM_TQ4_OLD                retired      -                            removed  -> use TQLLM_MATVEC_RULE=4:legacy
+TQLLM_TQ4_TUNE_LOG           retired      -                            removed  -> use TQLLM_DEBUG=tune
+TQLLM_TREE                   retired      -                            removed  -> use tree verify is on with -md; --no-tree turns it off
+TQLLM_TREE_CHAIN             retired      -                            removed  -> use TQLLM_DEBUG=tree_chain
+TQLLM_VRAM_MARGIN_MB         retired      -                            removed  -> use -fitt MiB (-fit on|off)
+TQFN_ARENA_MB                env          -                            MB: Flash-Next scratch arena size instead of the measured rule (the high-water mark is printed at exit)
+TQFN_CPU_MISS                env          0                            N: compute up to N missed experts per layer call on the CPU instead of copying them to the GPU (default on small cards: min(15, cores / 2 - 1); else off)
+TQFN_DENSE_INT8              env          0                            1 / 2: int8 activations for the dense prefill projections (per-32 / per-token scales); 0 = fp16 (exact path)
+TQFN_DRAFT_VOCAB             env          -                            FILE: the MTP draft vocabulary (overrides the manifest's draft_vocab)
+TQFN_KV                      env          -                            KV format for Flash-Next attention (name from the KV format registry; default bf16)
+TQFN_KV_HOST                 env          auto                         auto (default): on for discrete GPUs, off on unified memory; 1 / 0 force it. On: K/V older than TQFN_KV_HOST_KEEP positions lives in host memory after a long prompt (frees VRAM for expert banks; decode copies only the selected rows)
+TQFN_KV_HOST_KEEP            env          32768                        positions of K/V kept on the device with TQFN_KV_HOST=1
+TQFN_LAYER_SLOTS             env          -                            comma list of expert slots per layer (overrides the packed file's .slots profile)
+TQFN_MTP_SLOTS               env          256                          MTP expert slots (every expert when the trunk keeps every expert; 64 on small cards)
+TQFN_PREFILL_INT8            env          0                            1 / 2: int8 activations for the layer-major expert GEMMs (per-32 / per-token scales)
+TQFN_TAIL_SKIP               env          -                            R: in decode, skip non-resident experts ranked R-th or lower for every token of a call (approximate)
+
+=== STDERR ===
